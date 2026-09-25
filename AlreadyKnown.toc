@@ -7,4 +7,5 @@
 ## LoadSavedVariablesFirst: 1
 
 AlreadyKnown.lua [AllowLoadGameType standard]
+forever.lua [AllowLoadGameType classic, camelot]
 AlreadyKnownClassic.lua [AllowLoadGameType classic, camelot]

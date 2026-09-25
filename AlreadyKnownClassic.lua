@@ -61,7 +61,11 @@ local _G = _G
 	local isCataClassic = WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC
 	local isMoPClassic = WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC
 	]]
-	local isClassic = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
+	-- Forever runs Vanilla's game and answers WOW_PROJECT_ID like Retail, so it
+	-- is recognised by its version instead; forever.lua sets the flag before
+	-- this file loads, and every Vanilla path below hangs off this one local.
+	local isClassic = (AlreadyKnownForever and AlreadyKnownForever.isForever)
+		or (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
 	local isBCClassic = WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC
 	local isPTR = IsPublicTestClient and IsPublicTestClient() or false
 
@@ -227,7 +231,7 @@ local _G = _G
 			Debug("%d - Toy %d", itemId, i)
 			return true -- Item is known and collected
 
-		elseif text == ITEM_COSMETIC then -- Check if Cosmetic item has already known look (not all of them apparently get the "Already Known"-text added to the tooltip)
+		elseif text == ITEM_COSMETIC and C_TransmogCollection then -- Check if Cosmetic item has already known look (not all of them apparently get the "Already Known"-text added to the tooltip)
 			local knownTransmog = C_TransmogCollection.PlayerHasTransmogByItemInfo(itemLink)
 			if knownTransmog then
 				Debug("%d - Cosmetic %d", itemId, i)
@@ -601,7 +605,12 @@ local _G = _G
 			--end
 			needHooking["Blizzard_AuctionUI"] = false
 			needHooking["Blizzard_AuctionHouseUI"] = false
-			if isClassic then -- No GBank in Classic Era
+			-- Forever is excused this one: the same flag that turns on the Vanilla
+			-- paths would also say "this game has no guild bank", which is true of
+			-- Classic Era and not known to be true here. If it has none, the hook
+			-- never fires and nothing is lost; the other way round the guild bank
+			-- would quietly stop being tinted.
+			if isClassic and not (AlreadyKnownForever and AlreadyKnownForever.isForever) then -- No GBank in Classic Era
 				needHooking["Blizzard_GuildBankUI"] = false
 			end
 
