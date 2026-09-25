@@ -259,8 +259,8 @@ local _G = _G
 	-- id alone was not enough: a demon with a higher rank, or a pet spellbook naming another id
 	-- for the same spell, left the grimoire looking new. The spellbook can only be read while the
 	-- demon is out, so what each demon has shown is kept for the character
-	-- (AlreadyKnownSettings.petSpells[guid][spell name] = rank): the imp's grimoires stay known
-	-- while the voidwalker is out.
+	-- (AlreadyKnownSettings.petSpells[guid], the spell ids and each spell's highest rank): the
+	-- imp's grimoires stay known while the voidwalker is out.
 	local function isSecret(v) return issecretvalue and issecretvalue(v) or false end
 
 	local function _rankOf(subText) -- "Rank 2" / "Rang 2" -> 2; a spell without ranks is rank 1
@@ -304,7 +304,8 @@ local _G = _G
 				if info then spellName, spellSubName, spellId = info.name, info.subName, info.spellID end
 			end
 			if type(spellName) == "string" and not isSecret(spellName) and not isSecret(spellSubName) then
-				book[#book + 1] = { name = spellName, subText = spellSubName, id = spellId }
+				book[#book + 1] = { name = spellName, subText = spellSubName,
+					id = type(spellId) == "number" and not isSecret(spellId) and spellId or nil }
 			end
 		end
 		return book, petToken
@@ -314,26 +315,41 @@ local _G = _G
 		return UnitClass and select(2, UnitClass("player")) == "WARLOCK"
 	end
 
-	-- This character's remembered demon spells, name -> highest rank.
+	-- This character's kept demon spells: { ids = { [spell id] = true }, ranks = { [name] = highest rank } }.
+	-- The first form of it, name -> rank alone, also kept the pet's commands and could keep a rank
+	-- too low; it is dropped, and read again the next time the demon is out.
 	local function _petMemory()
 		local guid = UnitGUID and UnitGUID("player")
 		if type(guid) ~= "string" or isSecret(guid) then return nil end
 		if type(db.petSpells) ~= "table" then db.petSpells = {} end
-		if type(db.petSpells[guid]) ~= "table" then db.petSpells[guid] = {} end
-		return db.petSpells[guid]
+		local kept = db.petSpells[guid]
+		if type(kept) ~= "table" or type(kept.ids) ~= "table" or type(kept.ranks) ~= "table" then
+			kept = { ids = {}, ranks = {} }
+			db.petSpells[guid] = kept
+		end
+		return kept
 	end
 
-	-- Reads the pet's spellbook, and for a warlock keeps what it shows.
+	-- Reads the pet's spellbook, and for a warlock keeps what it shows. Only spells: the commands
+	-- and stances (Attack, Follow, Passive) have no spell id. A rank the book does not show yet (its
+	-- text can be empty while the game loads it) is taken from the spell itself.
 	local function _readPetSpells()
-		local book = _petSpellbook()
-		local memory = book and _isWarlock() and _petMemory()
-		if memory then
+		local book, petToken = _petSpellbook()
+		local kept = book and _isWarlock() and _petMemory()
+		if kept then
 			for _, spell in ipairs(book) do
-				local rank = _rankOf(spell.subText)
-				if (memory[spell.name] or 0) < rank then memory[spell.name] = rank end
+				if spell.id then
+					kept.ids[spell.id] = true
+					local rank = _rankOf(spell.subText)
+					if not (type(spell.subText) == "string" and strmatch(spell.subText, "%d")) then
+						local _, spellRank = _spellNameAndRank(spell.id)
+						rank = spellRank or rank
+					end
+					if (kept.ranks[spell.name] or 0) < rank then kept.ranks[spell.name] = rank end
+				end
 			end
 		end
-		return book
+		return book, petToken
 	end
 
 	-- Does the demon know the spell a grimoire teaches? true and how, or false.
@@ -346,9 +362,11 @@ local _G = _G
 				return true, spell.name .. "/" .. tostring(spell.subText)
 			end
 		end
-		local memory = name and _isWarlock() and _petMemory()
-		if memory and (memory[name] or 0) >= rank then
-			return true, name .. "/remembered rank " .. memory[name]
+		local kept = _isWarlock() and _petMemory()
+		if kept and kept.ids[spellId] then
+			return true, "kept spell " .. spellId
+		elseif kept and name and (kept.ranks[name] or 0) >= rank then
+			return true, name .. "/kept rank " .. kept.ranks[name]
 		end
 		return false
 	end
@@ -776,16 +794,19 @@ local _G = _G
 	-- /akf pet: what the pet's spellbook says, and what is kept for this character.
 	if AlreadyKnownForever then
 		function AlreadyKnownForever.petReport(say)
-			local book, petToken = _petSpellbook()
+			local book, petToken = _readPetSpells() -- keeps what it shows first, as a vendor would
 			say(string.format("pet spellbook: %s spells, pet type %s", book and #book or "no", tostring(petToken)))
 			for i, spell in ipairs(book or {}) do
 				say(string.format("  %d. %s / %s / id %s", i, spell.name, tostring(spell.subText), tostring(spell.id)))
 			end
-			local memory = _petMemory()
-			local kept = {}
-			for name, rank in pairs(memory or {}) do kept[#kept + 1] = name .. " " .. rank end
-			table.sort(kept)
-			say("kept for this character: " .. (#kept > 0 and table.concat(kept, ", ") or "nothing yet"))
+			local kept = _isWarlock() and _petMemory()
+			local ranks, ids = {}, {}
+			for name, rank in pairs(kept and kept.ranks or {}) do ranks[#ranks + 1] = name .. " " .. rank end
+			for id in pairs(kept and kept.ids or {}) do ids[#ids + 1] = id end
+			table.sort(ranks)
+			table.sort(ids)
+			say("kept for this character: " .. (#ranks > 0 and table.concat(ranks, ", ") .. " (spells " .. table.concat(ids, ", ") .. ")"
+				or "nothing yet"))
 		end
 	end
 
