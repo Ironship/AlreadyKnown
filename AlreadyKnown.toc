@@ -1,4 +1,4 @@
-## Interface: 120100, 50504, 38002, 20506, 16001, 11509
+## Interface: 120100, 16001, 50504, 38002, 20506, 11509
 ## Author: Sanex (Arathor EU)
 ## Title: Already Known?
 ## Version: @project-version@
@@ -6,5 +6,5 @@
 ## SavedVariables: AlreadyKnownSettings
 ## LoadSavedVariablesFirst: 1
 
-AlreadyKnown.lua [AllowLoadGameType mainline]
+AlreadyKnown.lua [AllowLoadGameType standard]
 AlreadyKnownClassic.lua [AllowLoadGameType classic, camelot]
