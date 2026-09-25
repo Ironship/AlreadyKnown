@@ -1,18 +1,18 @@
-# Already Known? for WoW: Forever
+# Known Recipes
 
-[Already Known?](https://github.com/ahakola/AlreadyKnown) by Sanex (ahakola) tints items you already know on vendors and the auction house. This fork makes it work on WoW: Forever.
+Known Recipes tints items you already know on vendors, in the auction house and in the guild bank: recipes, pets, mounts, toys, warlock grimoires and other learnable items. It is made for WoW: Forever and also runs on Classic and Retail.
 
-What this fork changes:
+It began as a fork of [Already Known?](https://github.com/ahakola/AlreadyKnown) by Sanex (ahakola) and is now its own addon, with its own name, settings and commands, so the two can be installed side by side.
 
-* `forever.lua` recognises Forever by its client version, because Forever reports Retail's `WOW_PROJECT_ID` and upstream's Classic detection misses it.
-* `AlreadyKnownClassic.lua` turns its Classic paths on for Forever, so grimoires and the old auction house are handled.
-* The cosmetic-item check runs only when `C_TransmogCollection` exists, since Forever may not have it.
-* The warlock grimoire check uses `C_SpellBook` where `HasPetSpells` and `GetSpellBookItemName` no longer exist, as on Forever; before, a vendor selling grimoires raised an error.
+What it adds to Already Known?:
+
+* Recognises Forever by its client version, since Forever reports Retail's `WOW_PROJECT_ID`, and turns on the Classic paths there: grimoires and the old auction house.
 * A grimoire counts as known when your demon has its spell at that rank or higher, even under another spell id. What each demon has shown is kept for the character, so grimoires stay tinted while another demon is out.
-* Items this addon knows to be known get a red "Already known" line in their tooltip when the game does not add one.
-* The guild bank hook stays on for Forever, which Classic Era would switch off.
-* `/akforever` (`/akf`) prints what the client reports, for troubleshooting; `/akf pet` lists your demon's spellbook and the spells kept for it.
+* Items it knows to be known get a red "Already known" line in their tooltip when the game does not add one.
+* The cosmetic-item check runs only when `C_TransmogCollection` exists, and the guild bank hook stays on for Forever.
 
-Install: unzip the release zip into `Interface\AddOns`, so the folder is `Interface\AddOns\AlreadyKnown`.
+Commands: `/knownrecipes` (`/kr`) sets the colour; `/krforever` (`/krf`) prints what the client reports, and `/krf pet` lists your demon's spellbook and the spells kept for it.
 
-Licence: MIT, as in the original project (`LICENSE.md`).
+Install: unzip the release zip into `Interface\AddOns`, so the folder is `Interface\AddOns\KnownRecipes`.
+
+Licence: MIT (`LICENSE.md`), which keeps the original author's notice.

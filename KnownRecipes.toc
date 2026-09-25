@@ -1,0 +1,12 @@
+## Interface: 120100, 16001, 50504, 38002, 20506, 11509
+## Author: Ironship
+## Title: Known Recipes
+## IconTexture: Interface\AddOns\KnownRecipes\icon
+## Version: @project-version@
+## Notes: Tints recipes, pets, mounts, grimoires and other learnable items you already know, on vendors and in the auction house. Based on Already Known? by Sanex.
+## SavedVariables: KnownRecipesSettings
+## LoadSavedVariablesFirst: 1
+
+KnownRecipes.lua [AllowLoadGameType standard]
+forever.lua [AllowLoadGameType classic, camelot]
+KnownRecipesClassic.lua [AllowLoadGameType classic, camelot]

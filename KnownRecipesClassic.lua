@@ -1,5 +1,5 @@
 --[[----------------------------------------------------------------------------
-	AlreadyKnown
+	Known Recipes, based on Already Known? by Sanex (ahakola), MIT
 ----------------------------------------------------------------------------]]--
 local ADDON_NAME = ...
 local _G = _G
@@ -28,8 +28,8 @@ local _G = _G
 		monochrome = false,
 		debug = false
 	}
-	AlreadyKnownSettings = initDB(AlreadyKnownSettings, dbDefaults)
-	local db = AlreadyKnownSettings
+	KnownRecipesSettings = initDB(KnownRecipesSettings, dbDefaults)
+	local db = KnownRecipesSettings
 
 
 	local function Debug(text, ...)
@@ -64,7 +64,7 @@ local _G = _G
 	-- Forever runs Vanilla's game and answers WOW_PROJECT_ID like Retail, so it
 	-- is recognised by its version instead; forever.lua sets the flag before
 	-- this file loads, and every Vanilla path below hangs off this one local.
-	local isClassic = (AlreadyKnownForever and AlreadyKnownForever.isForever)
+	local isClassic = (KnownRecipesForever and KnownRecipesForever.isForever)
 		or (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
 	local isBCClassic = WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC
 	local isPTR = IsPublicTestClient and IsPublicTestClient() or false
@@ -214,12 +214,12 @@ local _G = _G
 	local S_ITEM_CLASSES_ALLOWED = "^" .. gsub(ITEM_CLASSES_ALLOWED, "%%s", "(%%a+)")
 	-- Removed on Feb 23, 2023
 
-	local scantip = CreateFrame("GameTooltip", "AKScanningTooltip", nil, "GameTooltipTemplate")
+	local scantip = CreateFrame("GameTooltip", "KnownRecipesScanTooltip", nil, "GameTooltipTemplate")
 	scantip:SetOwner(UIParent, "ANCHOR_NONE")
 
 	local function _checkTooltipLine(text, i, tooltipTable, itemId, itemLink)
 		local lines = tooltipTable
-		local toyLine = _G["AKScanningTooltipTextLeft"..i + 2] and _G["AKScanningTooltipTextLeft"..i + 2]:GetText()
+		local toyLine = _G["KnownRecipesScanTooltipTextLeft"..i + 2] and _G["KnownRecipesScanTooltipTextLeft"..i + 2]:GetText()
 
 		if text == ITEM_SPELL_KNOWN or strmatch(text, S_PET_KNOWN) then -- Known item or Pet
 			Debug("%d - Tip %d/%d: %s (%s / %s)", itemId, i, lines, tostring(text), text == ITEM_SPELL_KNOWN and "true" or "false", strmatch(text, S_PET_KNOWN) and "true" or "false")
@@ -259,7 +259,7 @@ local _G = _G
 	-- id alone was not enough: a demon with a higher rank, or a pet spellbook naming another id
 	-- for the same spell, left the grimoire looking new. The spellbook can only be read while the
 	-- demon is out, so what each demon has shown is kept for the character
-	-- (AlreadyKnownSettings.petSpells[guid], the spell ids and each spell's highest rank): the
+	-- (KnownRecipesSettings.petSpells[guid], the spell ids and each spell's highest rank): the
 	-- imp's grimoires stay known while the voidwalker is out.
 	local function isSecret(v) return issecretvalue and issecretvalue(v) or false end
 
@@ -531,7 +531,7 @@ local _G = _G
 		--for i = 2, scantip:NumLines() do -- Line 1 is always the name so you can skip it.
 		local lines = scantip:NumLines()
 		for i = 2, lines do -- Line 1 is always the name so you can skip it.
-			local text = _G["AKScanningTooltipTextLeft"..i]:GetText()
+			local text = _G["KnownRecipesScanTooltipTextLeft"..i]:GetText()
 
 			local lineResult = _checkTooltipLine(text, i, lines, itemId, itemLink)
 			if lineResult == true then
@@ -761,7 +761,7 @@ local _G = _G
 			-- Classic Era and not known to be true here. If it has none, the hook
 			-- never fires and nothing is lost; the other way round the guild bank
 			-- would quietly stop being tinted.
-			if isClassic and not (AlreadyKnownForever and AlreadyKnownForever.isForever) then -- No GBank in Classic Era
+			if isClassic and not (KnownRecipesForever and KnownRecipesForever.isForever) then -- No GBank in Classic Era
 				needHooking["Blizzard_GuildBankUI"] = false
 			end
 
@@ -791,9 +791,9 @@ local _G = _G
 		f:RegisterEvent("SPELLS_CHANGED")
 	end
 
-	-- /akf pet: what the pet's spellbook says, and what is kept for this character.
-	if AlreadyKnownForever then
-		function AlreadyKnownForever.petReport(say)
+	-- /krf pet: what the pet's spellbook says, and what is kept for this character.
+	if KnownRecipesForever then
+		function KnownRecipesForever.petReport(say)
 			local book, petToken = _readPetSpells() -- keeps what it shows first, as a vendor would
 			say(string.format("pet spellbook: %s spells, pet type %s", book and #book or "no", tostring(petToken)))
 			for i, spell in ipairs(book or {}) do
@@ -814,7 +814,7 @@ local _G = _G
 --[[----------------------------------------------------------------------------
 	SlashHandler
 ----------------------------------------------------------------------------]]--
-	StaticPopupDialogs["ALREADYKNOWN_DEBUG"] = {
+	StaticPopupDialogs["KNOWNRECIPES_DEBUG"] = {
 		text = "Check you have tested the correct item and then copy&paste the debug text from the editbox below, even if the editbox looks empty:\n\n(Use " .. NORMAL_FONT_COLOR:WrapTextInColorCode("Ctrl+A") .. " to select text, " .. NORMAL_FONT_COLOR:WrapTextInColorCode("Ctrl+C") .. " to copy text)\n\nItemTest: %s",
 		button1 = OKAY,
 		showAlert = true,
@@ -914,7 +914,7 @@ local _G = _G
 				end
 
 				--Print(line)
-				local dialog = StaticPopup_Show("ALREADYKNOWN_DEBUG", tostring(itemLink)) -- Send to dialog for easy copy&paste for end user
+				local dialog = StaticPopup_Show("KNOWNRECIPES_DEBUG", tostring(itemLink)) -- Send to dialog for easy copy&paste for end user
 					if dialog then
 		 			dialog.data = line
 		 		end
@@ -971,8 +971,8 @@ local _G = _G
 	end
 
 
-	SLASH_ALREADYKNOWN1 = "/alreadyknown"
-	SLASH_ALREADYKNOWN2 = "/ak"
+	SLASH_KNOWNRECIPES1 = "/knownrecipes"
+	SLASH_KNOWNRECIPES2 = "/kr"
 	local SlashHandlers = {
 		["green"] = function()
 			db.r = 0; db.g = 1; db.b = 0
@@ -1025,7 +1025,7 @@ local _G = _G
 		end
 	}
 
-	SlashCmdList.ALREADYKNOWN = function(text)
+	SlashCmdList.KNOWNRECIPES = function(text)
 		local command, params = strsplit(" ", text, 2)
 
 		if SlashHandlers[command] then
@@ -1041,7 +1041,7 @@ local _G = _G
 				Print("%s: %s", (command:lower():gsub("^%l", string.upper)), (db[command:lower()] and GREEN_FONT_COLOR:WrapTextInColorCode("true") or RED_FONT_COLOR:WrapTextInColorCode("false")))
 			end
 		else
-			Print("/alreadyknown ( green | blue | yellow | cyan | purple | gray | custom | monochrome )")
+			Print("/knownrecipes ( green | blue | yellow | cyan | purple | gray | custom | monochrome )")
 		end
 	end
 

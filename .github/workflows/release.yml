@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Uploads nowhere but to this repository's GitHub release: the TOC names no CurseForge,
+      # WoWInterface or Wago project. Add ## X-Curse-Project-ID to the TOC once Known Recipes has one.
       - name: Create Package
         uses: BigWigsMods/packager@v2
-        with:
-          args: -p 88589

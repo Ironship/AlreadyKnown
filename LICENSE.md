@@ -1,7 +1,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2015-2026 ahakola
+Copyright (c) 2026 Ironship (Known Recipes)
+Copyright (c) 2015-2026 ahakola (Already Known?, which Known Recipes is based on)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

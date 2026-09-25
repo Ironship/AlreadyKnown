@@ -1,5 +1,5 @@
 --[[----------------------------------------------------------------------------
-	AlreadyKnown
+	Known Recipes, based on Already Known? by Sanex (ahakola), MIT
 ----------------------------------------------------------------------------]]--
 local ADDON_NAME = ...
 local _G = _G
@@ -29,8 +29,8 @@ local _G = _G
 		debug = false,
 		exclude = false -- Exclude extra debug info about non-text elements from Tooltip-test
 	}
-	AlreadyKnownSettings = initDB(AlreadyKnownSettings, dbDefaults)
-	local db = AlreadyKnownSettings
+	KnownRecipesSettings = initDB(KnownRecipesSettings, dbDefaults)
+	local db = KnownRecipesSettings
 
 
 	local function Debug(text, ...)
@@ -523,7 +523,7 @@ local _G = _G
 --[[----------------------------------------------------------------------------
 	SlashHandler
 ----------------------------------------------------------------------------]]--
-	StaticPopupDialogs["ALREADYKNOWN_DEBUG"] = {
+	StaticPopupDialogs["KNOWNRECIPES_DEBUG"] = {
 		text = "Check you have tested the correct item and then copy&paste the debug text from the editbox below, even if the editbox looks empty:\n\n(Use " .. NORMAL_FONT_COLOR:WrapTextInColorCode("Ctrl+A") .. " to select text, " .. NORMAL_FONT_COLOR:WrapTextInColorCode("Ctrl+C") .. " to copy text)\n\nItemTest: %s",
 		button1 = OKAY,
 		showAlert = true,
@@ -679,7 +679,7 @@ local _G = _G
 					line = line .. "\n" .. _debugTooltipData(tooltipData)
 				end
 				--Print(line)
-				local dialog = StaticPopup_Show("ALREADYKNOWN_DEBUG", tostring(itemLink)) -- Send to dialog for easy copy&paste for end user
+				local dialog = StaticPopup_Show("KNOWNRECIPES_DEBUG", tostring(itemLink)) -- Send to dialog for easy copy&paste for end user
 					if dialog then
 		 			dialog.data = line
 		 		end
@@ -736,8 +736,8 @@ local _G = _G
 	end
 
 
-	SLASH_ALREADYKNOWN1 = "/alreadyknown"
-	SLASH_ALREADYKNOWN2 = "/ak"
+	SLASH_KNOWNRECIPES1 = "/knownrecipes"
+	SLASH_KNOWNRECIPES2 = "/kr"
 	local SlashHandlers = {
 		["green"] = function()
 			db.r = 0; db.g = 1; db.b = 0
@@ -790,7 +790,7 @@ local _G = _G
 		end
 	}
 
-	SlashCmdList.ALREADYKNOWN = function(text)
+	SlashCmdList.KNOWNRECIPES = function(text)
 		local command, params = strsplit(" ", text, 2)
 
 		if SlashHandlers[command] then
@@ -809,7 +809,7 @@ local _G = _G
 				Print("%s: %s", (command:lower():gsub("^%l", string.upper)), (db[command:lower()] and GREEN_FONT_COLOR:WrapTextInColorCode("true") or RED_FONT_COLOR:WrapTextInColorCode("false")))
 			end
 		else
-			Print("/alreadyknown ( green | blue | yellow | cyan | purple | gray | custom | monochrome )")
+			Print("/knownrecipes ( green | blue | yellow | cyan | purple | gray | custom | monochrome )")
 		end
 	end
 

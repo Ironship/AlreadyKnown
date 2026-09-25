@@ -1,4 +1,4 @@
-package-as: AlreadyKnown
+package-as: KnownRecipes
 
 license-output: LICENSE.txt
 
