@@ -252,6 +252,107 @@ local _G = _G
 		return false
 	end
 
+--[[----------------------------------------------------------------------------
+	Warlock demons
+----------------------------------------------------------------------------]]--
+	-- A grimoire is known when its demon already has the spell at that rank or higher. The spell
+	-- id alone was not enough: a demon with a higher rank, or a pet spellbook naming another id
+	-- for the same spell, left the grimoire looking new. The spellbook can only be read while the
+	-- demon is out, so what each demon has shown is kept for the character
+	-- (AlreadyKnownSettings.petSpells[guid][spell name] = rank): the imp's grimoires stay known
+	-- while the voidwalker is out.
+	local function isSecret(v) return issecretvalue and issecretvalue(v) or false end
+
+	local function _rankOf(subText) -- "Rank 2" / "Rang 2" -> 2; a spell without ranks is rank 1
+		return type(subText) == "string" and tonumber(strmatch(subText, "(%d+)")) or 1
+	end
+
+	-- The name and rank of a spell, or nil while the client has not loaded its data.
+	local function _spellNameAndRank(spellId)
+		if C_Spell and C_Spell.IsSpellDataCached and not C_Spell.IsSpellDataCached(spellId) then
+			if C_Spell.RequestLoadSpellData then C_Spell.RequestLoadSpellData(spellId) end
+			return nil
+		end
+		local name, subText
+		if C_Spell and C_Spell.GetSpellName then name = C_Spell.GetSpellName(spellId)
+		elseif GetSpellInfo then name = GetSpellInfo(spellId) end
+		if C_Spell and C_Spell.GetSpellSubtext then subText = C_Spell.GetSpellSubtext(spellId)
+		elseif GetSpellSubtext then subText = GetSpellSubtext(spellId) end
+		if type(name) ~= "string" or name == "" then return nil end
+		return name, _rankOf(subText)
+	end
+
+	-- The pet's spellbook: { { name, subText, id }, ... }, or nil without a pet.
+	-- Forever runs the Retail client, where HasPetSpells and GetSpellBookItemName are gone and only
+	-- their C_SpellBook forms are left. The old names are still used wherever they exist.
+	local function _petSpellbook()
+		local numSpells, petToken
+		if HasPetSpells then
+			numSpells, petToken = HasPetSpells()
+		elseif C_SpellBook and C_SpellBook.HasPetSpells then
+			numSpells, petToken = C_SpellBook.HasPetSpells()
+		end
+		if type(numSpells) ~= "number" or isSecret(numSpells) then return nil, petToken end
+		local book = {}
+		local petBank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Pet or 1
+		for i = 1, numSpells do
+			local spellName, spellSubName, spellId
+			if GetSpellBookItemName then
+				spellName, spellSubName, spellId = GetSpellBookItemName(i, BOOKTYPE_PET)
+			elseif C_SpellBook and C_SpellBook.GetSpellBookItemInfo then
+				local info = C_SpellBook.GetSpellBookItemInfo(i, petBank)
+				if info then spellName, spellSubName, spellId = info.name, info.subName, info.spellID end
+			end
+			if type(spellName) == "string" and not isSecret(spellName) and not isSecret(spellSubName) then
+				book[#book + 1] = { name = spellName, subText = spellSubName, id = spellId }
+			end
+		end
+		return book, petToken
+	end
+
+	local function _isWarlock()
+		return UnitClass and select(2, UnitClass("player")) == "WARLOCK"
+	end
+
+	-- This character's remembered demon spells, name -> highest rank.
+	local function _petMemory()
+		local guid = UnitGUID and UnitGUID("player")
+		if type(guid) ~= "string" or isSecret(guid) then return nil end
+		if type(db.petSpells) ~= "table" then db.petSpells = {} end
+		if type(db.petSpells[guid]) ~= "table" then db.petSpells[guid] = {} end
+		return db.petSpells[guid]
+	end
+
+	-- Reads the pet's spellbook, and for a warlock keeps what it shows.
+	local function _readPetSpells()
+		local book = _petSpellbook()
+		local memory = book and _isWarlock() and _petMemory()
+		if memory then
+			for _, spell in ipairs(book) do
+				local rank = _rankOf(spell.subText)
+				if (memory[spell.name] or 0) < rank then memory[spell.name] = rank end
+			end
+		end
+		return book
+	end
+
+	-- Does the demon know the spell a grimoire teaches? true and how, or false.
+	local function _petKnows(spellId)
+		local name, rank = _spellNameAndRank(spellId)
+		for _, spell in ipairs(_readPetSpells() or {}) do
+			if spell.id == spellId then
+				return true, spell.name .. "/" .. tostring(spell.subText)
+			elseif name and spell.name == name and _rankOf(spell.subText) >= rank then
+				return true, spell.name .. "/" .. tostring(spell.subText)
+			end
+		end
+		local memory = name and _isWarlock() and _petMemory()
+		if memory and (memory[name] or 0) >= rank then
+			return true, name .. "/remembered rank " .. memory[name]
+		end
+		return false
+	end
+
 	local function _checkIfKnown(itemLink)
 		if knownTable[itemLink] then -- Check if we have scanned this item already and it was known then
 			return true
@@ -299,31 +400,11 @@ local _G = _G
 				end
 
 			elseif (isClassic or isBCClassic) and spellbookItems[itemId] then -- Check Warlock Grimoires
-				-- Forever runs the Retail client, where HasPetSpells and GetSpellBookItemName are gone
-				-- and only their C_SpellBook forms are left; calling the old names stopped every vendor
-				-- list with a grimoire on it. The old names are still used wherever they exist.
-				local numSpells, petToken
-				if HasPetSpells then
-					numSpells, petToken = HasPetSpells()
-				elseif C_SpellBook and C_SpellBook.HasPetSpells then
-					numSpells, petToken = C_SpellBook.HasPetSpells()
-				end
-				if numSpells and petToken == "DEMON" then
-					local petBank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Pet or 1
-					for i = 1, numSpells do
-						local spellName, spellSubName, spellId
-						if GetSpellBookItemName then
-							spellName, spellSubName, spellId = GetSpellBookItemName(i, BOOKTYPE_PET)
-						elseif C_SpellBook and C_SpellBook.GetSpellBookItemInfo then
-							local info = C_SpellBook.GetSpellBookItemInfo(i, petBank)
-							if info then spellName, spellSubName, spellId = info.name, info.subName, info.spellID end
-						end
-						if spellId and spellbookItems[itemId] == spellId then
-							Debug("%d (%s/%s/%d) - SpellBookItem", itemId, tostring(spellName), tostring(spellSubName), spellId)
-							knownTable[itemLink] = true -- Mark as known for later use
-							return true -- This spellbookItem item is already known
-						end
-					end
+				local known, how = _petKnows(spellbookItems[itemId])
+				if known then
+					Debug("%d (%s/%d) - SpellBookItem", itemId, tostring(how), spellbookItems[itemId])
+					knownTable[itemLink] = true -- Mark as known for later use
+					return true -- This spellbookItem item is already known
 				end
 
 			end
@@ -590,6 +671,43 @@ local _G = _G
 
 
 --[[----------------------------------------------------------------------------
+	Tooltip
+----------------------------------------------------------------------------]]--
+	-- Grimoires, quest items and the rest this addon knows to be known, but whose tooltip does not
+	-- say so, get the game's own "Already known" line, in red.
+	local function _saysKnown(tooltip)
+		local name = tooltip:GetName()
+		for i = 2, tooltip:NumLines() do
+			local line = name and _G[name .. "TextLeft" .. i]
+			local text = line and line:GetText()
+			if type(text) == "string" and not isSecret(text)
+				and (text == ITEM_SPELL_KNOWN or strmatch(text, S_PET_KNOWN)) then
+				return true
+			end
+		end
+		return false
+	end
+
+	local function _addKnownLine(tooltip)
+		if tooltip ~= GameTooltip and tooltip ~= ItemRefTooltip then return end -- not the scanning one
+		local ok, _, itemLink = pcall(tooltip.GetItem, tooltip)
+		if not ok or type(itemLink) ~= "string" or isSecret(itemLink) then return end
+		local okKnown, known = pcall(_checkIfKnown, itemLink) -- a hover must never break on an odd item
+		if okKnown and known and not _saysKnown(tooltip) then
+			local r, g, b = 1, 0.125, 0.125
+			if RED_FONT_COLOR then r, g, b = RED_FONT_COLOR:GetRGB() end
+			tooltip:AddLine(ITEM_SPELL_KNOWN, r, g, b)
+		end
+	end
+	if TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall and Enum and Enum.TooltipDataType then
+		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, _addKnownLine)
+	elseif GameTooltip and GameTooltip.HookScript then
+		GameTooltip:HookScript("OnTooltipSetItem", _addKnownLine)
+		if ItemRefTooltip then ItemRefTooltip:HookScript("OnTooltipSetItem", _addKnownLine) end
+	end
+
+
+--[[----------------------------------------------------------------------------
 	Events
 ----------------------------------------------------------------------------]]--
 	local f = CreateFrame("Frame")
@@ -640,6 +758,34 @@ local _G = _G
 		if not (needHooking["Blizzard_AuctionHouseUI"] or needHooking["Blizzard_AuctionUI"] or needHooking["Blizzard_GuildBankUI"]) then -- No need to listen to the event anymore
 			Debug("<- UnregisterEvent", event)
 			self:UnregisterEvent(event)
+		end
+	end
+
+	-- A warlock's demon comes out, or learns a spell: keep what its spellbook shows.
+	if isClassic or isBCClassic then
+		local function _petChanged(self, event, unit)
+			if event == "UNIT_PET" and unit ~= "player" then return end
+			if _isWarlock() then _readPetSpells() end
+		end
+		f.UNIT_PET, f.PET_BAR_UPDATE, f.SPELLS_CHANGED = _petChanged, _petChanged, _petChanged
+		f:RegisterEvent("UNIT_PET")
+		f:RegisterEvent("PET_BAR_UPDATE")
+		f:RegisterEvent("SPELLS_CHANGED")
+	end
+
+	-- /akf pet: what the pet's spellbook says, and what is kept for this character.
+	if AlreadyKnownForever then
+		function AlreadyKnownForever.petReport(say)
+			local book, petToken = _petSpellbook()
+			say(string.format("pet spellbook: %s spells, pet type %s", book and #book or "no", tostring(petToken)))
+			for i, spell in ipairs(book or {}) do
+				say(string.format("  %d. %s / %s / id %s", i, spell.name, tostring(spell.subText), tostring(spell.id)))
+			end
+			local memory = _petMemory()
+			local kept = {}
+			for name, rank in pairs(memory or {}) do kept[#kept + 1] = name .. " " .. rank end
+			table.sort(kept)
+			say("kept for this character: " .. (#kept > 0 and table.concat(kept, ", ") or "nothing yet"))
 		end
 	end
 

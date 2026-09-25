@@ -29,9 +29,17 @@ SLASH_AKFOREVER2 = "/akf"
 -- Only a key of the game's own table is written. Assigning the global itself
 -- ("SlashCmdList = SlashCmdList or {}") tainted it, and the next secure code to
 -- read it -- /run and its script prompt -- was blocked and blamed on this addon.
-SlashCmdList["AKFOREVER"] = function()
+SlashCmdList["AKFOREVER"] = function(msg)
 	local function say(text)
 		print("|cffffcc00" .. ADDON_NAME .. ":|r " .. text)
+	end
+	if strtrim(msg or ""):lower() == "pet" then
+		if AlreadyKnownForever.petReport then
+			AlreadyKnownForever.petReport(say)
+		else
+			say("the addon file itself did not load, so there is no pet report")
+		end
+		return
 	end
 	local v, build, _, iface = GetBuildInfo()
 	say(string.format("client %s (%s), interface %s, WOW_PROJECT_ID=%s",
@@ -49,4 +57,5 @@ SlashCmdList["AKFOREVER"] = function()
 		.. "[AllowLoadGameType classic, camelot])",
 		tostring(SlashCmdList and SlashCmdList.ALREADYKNOWN ~= nil)))
 	say("colours and the rest: /ak")
+	say("a warlock's demon and the spells kept for it: /akf pet")
 end
