@@ -299,12 +299,27 @@ local _G = _G
 				end
 
 			elseif (isClassic or isBCClassic) and spellbookItems[itemId] then -- Check Warlock Grimoires
-				local numSpells, petToken = HasPetSpells()
+				-- Forever runs the Retail client, where HasPetSpells and GetSpellBookItemName are gone
+				-- and only their C_SpellBook forms are left; calling the old names stopped every vendor
+				-- list with a grimoire on it. The old names are still used wherever they exist.
+				local numSpells, petToken
+				if HasPetSpells then
+					numSpells, petToken = HasPetSpells()
+				elseif C_SpellBook and C_SpellBook.HasPetSpells then
+					numSpells, petToken = C_SpellBook.HasPetSpells()
+				end
 				if numSpells and petToken == "DEMON" then
+					local petBank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Pet or 1
 					for i = 1, numSpells do
-						local spellName, spellSubName, spellId = GetSpellBookItemName(i, BOOKTYPE_PET)
-						if spellbookItems[itemId] == spellId then
-							Debug("%d (%s/%s/%d) - SpellBookItem", itemId, spellName, spellSubName, spellId)
+						local spellName, spellSubName, spellId
+						if GetSpellBookItemName then
+							spellName, spellSubName, spellId = GetSpellBookItemName(i, BOOKTYPE_PET)
+						elseif C_SpellBook and C_SpellBook.GetSpellBookItemInfo then
+							local info = C_SpellBook.GetSpellBookItemInfo(i, petBank)
+							if info then spellName, spellSubName, spellId = info.name, info.subName, info.spellID end
+						end
+						if spellId and spellbookItems[itemId] == spellId then
+							Debug("%d (%s/%s/%d) - SpellBookItem", itemId, tostring(spellName), tostring(spellSubName), spellId)
 							knownTable[itemLink] = true -- Mark as known for later use
 							return true -- This spellbookItem item is already known
 						end
