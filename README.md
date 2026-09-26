@@ -9,7 +9,7 @@ What it adds to Already Known?:
 * Recognises Forever by its client version, since Forever reports Retail's `WOW_PROJECT_ID`, and turns on the Classic paths there, such as the warlock grimoires.
 * A grimoire counts as known when your demon has its spell at that rank or higher, even under another spell id. What each demon has shown is kept for the character, so grimoires stay tinted while another demon is out.
 * Items it knows to be known get a red "Already known" line in their tooltip when the game does not add one.
-* The cosmetic-item check runs only when `C_TransmogCollection` exists, and the guild bank hook stays on for Forever.
+* The cosmetic-item check runs only when `C_TransmogCollection` exists.
 
 Commands: `/knownrecipes` (`/kr`) sets the colour; `/krforever` (`/krf`) prints what the client reports, and `/krf pet` lists your demon's spellbook and the spells kept for it.
 

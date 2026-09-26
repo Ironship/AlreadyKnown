@@ -2,12 +2,10 @@ local ADDON_NAME = ...
 
 -- Which game this is.
 --
--- World of Warcraft: Forever answers WOW_PROJECT_ID as if it were Retail, and
--- every flavour test in this addon is written against that constant, so on this
--- client every one of them is wrong: the Vanilla paths -- warlock grimoires,
--- the old auction house, no guild bank -- would all be skipped, and the
--- collections paths they would be skipped in favour of need journals this
--- client does not have.
+-- World of Warcraft: Forever answers WOW_PROJECT_ID as if it were Retail, so
+-- the Classic file's own test would miss it. On Forever the flag turns on one
+-- thing: the warlock grimoire check and the pet spellbook events behind it. The
+-- auction house and the guild bank are hooked by addon name, not by this flag.
 --
 -- The one answer Forever gives that Retail does not is its version: 1.60.x,
 -- where Classic Era is 1.15.x. So the major and minor are what decide it, the
