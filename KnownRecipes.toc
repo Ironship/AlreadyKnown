@@ -1,4 +1,4 @@
-## Interface: 120100, 16001, 50504, 38002, 20506, 11509
+## Interface: 120100, 120105, 16001, 50504, 38002, 20506, 11509
 ## Author: Ironship
 ## Title: Known Recipes
 ## IconTexture: Interface\AddOns\KnownRecipes\icon
