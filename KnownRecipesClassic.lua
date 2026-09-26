@@ -67,7 +67,6 @@ local _G = _G
 	local isClassic = (KnownRecipesForever and KnownRecipesForever.isForever)
 		or (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
 	local isBCClassic = WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC
-	local isPTR = IsPublicTestClient and IsPublicTestClient() or false
 
 
 --[[----------------------------------------------------------------------------
@@ -238,15 +237,6 @@ local _G = _G
 				return true -- Item is known and collected
 			end
 
-		-- Debug
-		elseif isPTR then
-			if strmatch(text, "Priest") then
-				Debug("PTR Debug match:", text)
-				return true
-			elseif strmatch(text, "alcoholic beverage") then
-				Debug("PTR Debug match:", text)
-				return true
-			end
 		end
 
 		return false

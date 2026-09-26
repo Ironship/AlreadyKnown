@@ -64,7 +64,6 @@ local _G = _G
 	local isCataClassic = WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC
 	local isMoPClassic = WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC
 	]]
-	local isPTR = IsPublicTestClient and IsPublicTestClient() or false
 
 
 --[[----------------------------------------------------------------------------
@@ -192,18 +191,6 @@ local _G = _G
 				return true -- Item is known and collected
 			end
 
-		-- Debug
-		elseif isPTR then
-			if strmatch(text, "Priest") then
-				Debug("PTR Debug match:", text)
-				return true
-			elseif strmatch(text, "alcoholic beverage") then
-				Debug("PTR Debug match:", text)
-				return true
-			elseif strmatch(text, "Owned: ") then
-				Debug("PTR Debug match:", text, "->", strmatch(text, S_HOUSING_DECOR_OWNED_COUNT_FORMAT))
-				return true
-			end
 		end
 
 		return false
